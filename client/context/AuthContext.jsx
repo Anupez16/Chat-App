@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     setAuthUser(null);
     setOnlineUsers([]);
     axios.defaults.headers.common["token"] = null;
-    toast.success("Logged out successfullt");
+    toast.success("Logged out successfully");
     socket.disconnect();
   };
 
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.put("/api/auth/update-profile", body);
       if (data.success) {
-        setAuthUser(data.user);
+        setAuthUser(data.userData);
         toast.success("Profile updated successfully");
       }
     } catch (error) {

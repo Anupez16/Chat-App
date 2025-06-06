@@ -4,12 +4,12 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 
 // Signup new user
-export const signup = async () => {
+export const signup = async (req, res) => {
     const { fullName, email, password, bio } = req.body;
 
     try {
         if (!fullName || !email || !password || !bio) {
-            return resizeBy.json({
+            return res.json({
                 success: false, message: "missing required fields"
             })
         }
@@ -17,7 +17,7 @@ export const signup = async () => {
         const user = await User.findOne({ email });
 
         if (user) {
-            return resizeBy.json({
+            return res.json({
                 success: false, message: "Account with this email already exists"
             })
         }
@@ -25,7 +25,7 @@ export const signup = async () => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newUser = new User.create({
+        const newUser = await User.create({
             fullName,
             email,
             password: hashedPassword,
@@ -55,7 +55,14 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const userData = await User.findOne({ email })
+        const userData = await User.findOne({ email });
+
+        if (!userData) {
+            return res.json({
+                success: false,
+                message: "User not found",
+            });
+        }
 
         const isPasswordCorrect = await bcrypt.compare(password, userData.password);
 
@@ -65,7 +72,7 @@ export const login = async (req, res) => {
             });
         }
 
-        const token = generateToken(newUser._id);
+        const token = generateToken(userData._id);
 
         res.json({
             success: true, userData, token, message: "Login successful"
@@ -91,7 +98,6 @@ export const checkAuth = async (req, res) => {
 // Controller to update user profile
 export const updateProfile = async (req, res) => {
     try {
-
         const { profilePic, bio, fullName } = req.body;
 
         const userId = req.user._id;
