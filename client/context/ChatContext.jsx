@@ -9,6 +9,8 @@ export const ChatProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [unseenMessages, setUnseenMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
 
   const { socket, axios } = useContext(AuthContext);
 
@@ -26,16 +28,20 @@ export const ChatProvider = ({ children }) => {
   };
 
   //   function to get messages for selected user
-  const getMessages = async (userId) => {
-    try {
-      const { data } = await axios.get(`/api/messages/${userId}`);
-      if (data.success) {
-        setMessages(data.messages);
-      }
-    } catch (error) {
-      toast.error(error.message);
+const getMessages = async (userId) => {
+  try {
+    setLoadingMessages(true);
+    const { data } = await axios.get(`/api/messages/${userId}`);
+    if (data.success) {
+      setMessages(data.messages);
     }
-  };
+  } catch (error) {
+    toast.error(error.message);
+  } finally {
+    setLoadingMessages(false);
+  }
+};
+
 
   // function to send message to selected user
   const sendMessage = async (messageData) => {

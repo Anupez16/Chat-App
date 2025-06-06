@@ -10,11 +10,14 @@ const RightSideBar = () => {
   const [msgImages, setMsgImages] = useState([])
 
   // get all images
-  useEffect(()=>{
-    setMsgImages(
-      messages.filter(msg => msg.image).map(msg=>msg.image)
-    )
-  },[messages])
+useEffect(() => {
+  if (Array.isArray(messages)) {
+    setMsgImages(messages.filter(msg => msg?.image).map(msg => msg.image));
+  } else {
+    setMsgImages([]);
+  }
+}, [messages]);
+
 
   return (
     selectedUser && (
