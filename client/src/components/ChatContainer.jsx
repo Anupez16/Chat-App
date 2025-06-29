@@ -8,68 +8,39 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 
 const ChatContainer = () => {
-  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages } =
-    useContext(ChatContext);
+  const {
+    messages,
+    selectedUser,
+    setSelectedUser,
+    sendMessage,
+    getMessages,
+    getGroupMessages,
+    currentGroupId,
+    sendGroupMessage, // ✅ Use this instead of socket.emit directly
+  } = useContext(ChatContext);
+
   const { authUser, onlineUsers } = useContext(AuthContext);
+
+  const [input, setInput] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const scrollEnd = useRef();
   const messagesContainerRef = useRef();
 
-  const [input, setInput] = useState("");
-  const [isSending, setIsSending] = useState(false);
-
   const isUserAtBottom = () => {
     const container = messagesContainerRef.current;
     if (!container) return false;
-    return (
-      container.scrollHeight - container.scrollTop <=
-      container.clientHeight + 100
-    ); // within 100px of bottom
-  };
-
-  // handle send message
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (input.trim() === "" || isSending) return null;
-    setIsSending(true);
-    try {
-      await sendMessage({ text: input.trim() });
-      setInput("");
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // handle sending an image
-  const handleSendImage = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !file.type.startsWith("image/")) {
-      toast.error("Select an image file");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      setIsSending(true);
-      try {
-        await sendMessage({ image: reader.result });
-        e.target.value = "";
-      } catch (error) {
-        toast.error(error.message);
-      } finally {
-        setIsSending(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    return container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
   };
 
   useEffect(() => {
     if (selectedUser) {
       getMessages(selectedUser._id);
+    } else if (currentGroupId) {
+      getGroupMessages(currentGroupId);
     }
-  }, [selectedUser, getMessages]);
+  }, [selectedUser, currentGroupId]);
 
   useEffect(() => {
     if (scrollEnd.current && messages && isUserAtBottom()) {
@@ -77,92 +48,132 @@ const ChatContainer = () => {
     }
   }, [messages]);
 
-  return selectedUser ? (
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || isSending) return;
+    setIsSending(true);
+    try {
+      if (selectedUser) {
+        await sendMessage({ text: input.trim() });
+      } else if (currentGroupId) {
+        sendGroupMessage({ text: input.trim() });
+      }
+      setInput("");
+    } catch (error) {
+      toast.error("Message failed to send");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleSendImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Select a valid image");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      setIsSending(true);
+      try {
+        if (selectedUser) {
+          await sendMessage({ image: reader.result });
+        } else if (currentGroupId) {
+          sendGroupMessage({ image: reader.result });
+        }
+        e.target.value = "";
+      } catch (error) {
+        toast.error("Failed to send image");
+      } finally {
+        setIsSending(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const renderHeader = () => {
+    if (selectedUser) {
+      return (
+        <div className="flex items-center gap-3 py-3 mx-4 border-b border-stone-500">
+          <img src={selectedUser.profilePic || assets.avatar_icon} alt="User" className="w-8 rounded-full" />
+          <p className="flex-1 text-lg text-white flex items-center gap-2">
+            {selectedUser.fullName}
+            {onlineUsers.includes(selectedUser._id) && (
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            )}
+          </p>
+          <img
+            onClick={() => setSelectedUser(null)}
+            src={assets.arrow_icon}
+            alt="Back"
+            className="md:hidden max-w-7"
+          />
+        </div>
+      );
+    } else if (currentGroupId) {
+      return (
+        <div className="flex items-center gap-3 py-3 mx-4 border-b border-stone-500">
+          <p className="flex-1 text-lg text-white">Group Chat</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return selectedUser || currentGroupId ? (
     <div className="h-full overflow-scroll relative backdrop-blur-lg">
-      {/* {-------------------------- header---------------------} */}
-      <div className="flex items-center gap-3 py-3 mx-4 border-b border-stone-500">
-        <img
-          src={selectedUser.profilePic || assets.avatar_icon}
-          alt={`${selectedUser.fullName}'s profile picture`}
-          className="w-8 rounded-full"
-        />
-        <p className="flex-1 text-lg text-white flex items-center gap-2">
-          {selectedUser.fullName}
-          {onlineUsers.includes(selectedUser._id) && (
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          )}
-        </p>
-        <img
-          onClick={() => setSelectedUser(null)}
-          src={assets.arrow_icon}
-          alt="Back to chat list"
-          className="md:hidden max-w-7"
-          aria-label="Back to chat list"
-        />
-        <img
-          src={assets.help_icon}
-          alt="Help"
-          className="max-md:hidden max-w-5"
-          aria-label="Help"
-        />
-      </div>
-      {/* {----------------- chat area ---------------} */}
+      {renderHeader()}
+
+      {/* 💬 Chat Area */}
       <div
         ref={messagesContainerRef}
         className="flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6"
       >
         {messages.map((msg, index) => {
-          if (!msg || (!msg.text && !msg.image)) {
-            console.warn("Invalid message detected:", msg);
-            return null;
-          }
-
+          if (!msg || (!msg.text && !msg.image)) return null;
           const isSender = msg.senderId === authUser._id;
 
           return (
             <div
               key={index}
-              className={`flex items-end gap-2 justify-end ${
-                !isSender && "flex-row-reverse"
-              }`}
+              className={`flex items-end gap-2 justify-end ${!isSender && "flex-row-reverse"}`}
             >
-              {msg.image ? (
-                <img
-                  src={msg.image}
-                  alt="Shared image"
-                  className="max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8"
-                />
-              ) : (
-                <span
-                  className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${
-                    isSender ? "rounded-br-none" : "rounded-bl-none"
-                  }`}
-                >
-                  {msg.text}
-                </span>
-              )}
+              <div className="max-w-[230px] mb-8">
+                {currentGroupId && !isSender && (
+                  <p className="text-xs text-gray-400 mb-1">{msg.senderName || "User"}</p>
+                )}
+                {msg.image ? (
+                  <img
+                    src={msg.image}
+                    alt="Shared"
+                    className="border border-gray-700 rounded-lg overflow-hidden"
+                  />
+                ) : (
+                  <span
+                    className={`p-2 md:text-sm font-light rounded-lg break-all bg-violet-500/30 text-white ${
+                      isSender ? "rounded-br-none" : "rounded-bl-none"
+                    }`}
+                  >
+                    {msg.text}
+                  </span>
+                )}
+              </div>
               <div className="text-center text-xs">
                 <img
-                  src={
-                    isSender
-                      ? authUser?.profilePic || assets.avatar_icon
-                      : selectedUser?.profilePic || assets.avatar_icon
-                  }
-                  alt={`${
-                    isSender ? authUser?.fullName : selectedUser?.fullName
-                  }'s avatar`}
+                  src={authUser?.profilePic || assets.avatar_icon}
+                  alt="avatar"
                   className="w-7 rounded-full"
                 />
-                <p className="text-gray-500">
-                  {msg.createdAt ? formatMessageTime(msg.createdAt) : ""}
-                </p>
+                <p className="text-gray-500">{msg.createdAt ? formatMessageTime(msg.createdAt) : ""}</p>
               </div>
             </div>
           );
         })}
         <div ref={scrollEnd}></div>
       </div>
-      {/* {----------------- bottom area ---------------} */}
+
+      {/* ⌨️ Bottom Input */}
       <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3">
         <div className="flex-1 flex items-center bg-gray-100/12 px-3 rounded-full">
           <button
@@ -176,9 +187,7 @@ const ChatContainer = () => {
             <div className="absolute bottom-14 left-0 z-10">
               <Picker
                 data={data}
-                onEmojiSelect={(emoji) =>
-                  setInput((prev) => prev + emoji.native)
-                }
+                onEmojiSelect={(emoji) => setInput((prev) => prev + emoji.native)}
                 theme="dark"
               />
             </div>
@@ -192,7 +201,6 @@ const ChatContainer = () => {
             placeholder="Send a message"
             className="flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400"
             disabled={isSending}
-            aria-label="Type a message"
           />
           <input
             onChange={handleSendImage}
@@ -202,10 +210,10 @@ const ChatContainer = () => {
             hidden
             disabled={isSending}
           />
-          <label htmlFor="image" aria-label="Upload image">
+          <label htmlFor="image">
             <img
               src={assets.gallery_icon}
-              alt="Upload image"
+              alt="Upload"
               className="w-5 mr-2 cursor-pointer"
             />
           </label>
@@ -213,10 +221,8 @@ const ChatContainer = () => {
         <img
           onClick={handleSendMessage}
           src={assets.send_button}
-          alt="Send message"
+          alt="Send"
           className={`w-7 cursor-pointer ${isSending ? "opacity-50" : ""}`}
-          aria-label="Send message"
-          disabled={isSending}
         />
       </div>
     </div>

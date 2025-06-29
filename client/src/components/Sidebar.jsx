@@ -1,23 +1,24 @@
 import React, { useContext, useEffect, useState } from "react";
 import assets from "../assets/assets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { ChatContext } from "../../context/ChatContext";
-import { Link } from "react-router-dom";
 
 const Sidebar = () => {
   const {
     getUsers,
     users,
+    groups, // ✅ groups from context
     selectedUser,
     setSelectedUser,
     unseenMessages,
     setUnseenMessages,
+    setCurrentGroupId, // ✅ for switching to group chat
   } = useContext(ChatContext);
 
   const { logout, onlineUsers } = useContext(AuthContext);
 
-  const [input, setInput] = useState(false);
+  const [input, setInput] = useState("");
 
   const navigate = useNavigate();
 
@@ -37,6 +38,7 @@ const Sidebar = () => {
         selectedUser ? "max-md:hidden" : ""
       }`}
     >
+      {/* Logo and Menu */}
       <div className="pb-5">
         <div className="flex items-center justify-between">
           <img src={assets.logo} alt="logo" className="max-w-40" />
@@ -61,6 +63,7 @@ const Sidebar = () => {
           </div>
         </div>
 
+        {/* Search Bar */}
         <div className="bg-[#282142] rounded-full flex items-center gap-2 py-3 px-4 mt-5">
           <img src={assets.search_icon} alt="Search" className="w-3" />
           <input
@@ -72,6 +75,7 @@ const Sidebar = () => {
         </div>
       </div>
 
+      {/* Group Chat Navigation */}
       <div className="mb-5">
         <Link
           to="/groups"
@@ -81,11 +85,13 @@ const Sidebar = () => {
         </Link>
       </div>
 
+      {/* User List */}
       <div className="flex flex-col">
         {filteredUsers.map((user, index) => (
           <div
             onClick={() => {
               setSelectedUser(user);
+              setCurrentGroupId(null); // ✅ Exit group chat if active
               setUnseenMessages((prev) => ({ ...prev, [user._id]: 0 }));
             }}
             key={index}
@@ -111,6 +117,26 @@ const Sidebar = () => {
                 {unseenMessages[user._id]}
               </p>
             )}
+          </div>
+        ))}
+      </div>
+
+      {/* Group List */}
+      <div className="mt-6 border-t border-gray-600 pt-4">
+        <h3 className="text-xs text-gray-400 mb-2">Your Groups</h3>
+        {groups.length === 0 && (
+          <p className="text-xs text-gray-500">No groups joined yet.</p>
+        )}
+        {groups.map((group) => (
+          <div
+            key={group._id}
+            onClick={() => {
+              setSelectedUser(null); // ✅ exit private chat
+              setCurrentGroupId(group._id); // ✅ switch to group
+            }}
+            className="cursor-pointer px-3 py-2 hover:bg-[#282142]/40 rounded text-sm"
+          >
+            📢 {group.name}
           </div>
         ))}
       </div>
