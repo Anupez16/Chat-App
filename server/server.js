@@ -5,7 +5,9 @@ import http from 'http';
 import { connectDB } from './lib/db.js';
 import userRouter from './routes/userRoutes.js';
 import messageRouter from './routes/messageRoutes.js';
+import groupRoutes from './routes/groupRoutes.js';
 import { Server } from 'socket.io';
+
 
 //Create Ecpress app and HTTP server
 const app = express();
@@ -49,6 +51,8 @@ app.use(cors());
 app.use("/api/status", (req, res) => res.send("Server is live!"));
 app.use("/api/auth", userRouter)
 app.use("/api/messages", messageRouter)
+app.use('/api/groups', groupRoutes);
+
 
 
 //connect to the MongoDB database

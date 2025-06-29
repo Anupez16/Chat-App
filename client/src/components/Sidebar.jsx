@@ -3,6 +3,7 @@ import assets from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { ChatContext } from "../../context/ChatContext";
+import { Link } from "react-router-dom";
 
 const Sidebar = () => {
   const {
@@ -28,7 +29,7 @@ const Sidebar = () => {
 
   useEffect(() => {
     getUsers();
-  }, [onlineUsers,getUsers]);
+  }, [onlineUsers, getUsers]);
 
   return (
     <div
@@ -69,6 +70,15 @@ const Sidebar = () => {
             placeholder="Search User..."
           />
         </div>
+      </div>
+
+      <div className="mb-5">
+        <Link
+          to="/groups"
+          className="mt-4 bg-violet-700 text-white text-sm text-center py-2 px-3 rounded-full hover:bg-violet-800 transition block"
+        >
+          ➕ Group Chat
+        </Link>
       </div>
 
       <div className="flex flex-col">
