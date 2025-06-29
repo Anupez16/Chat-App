@@ -4,11 +4,14 @@ import { formatMessageTime } from "../lib/utils";
 import { ChatContext } from "../../context/ChatContext";
 import { AuthContext } from "../../context/AuthContext";
 import toast from "react-hot-toast";
+import Picker from "@emoji-mart/react";
+import data from "@emoji-mart/data";
 
 const ChatContainer = () => {
   const { messages, selectedUser, setSelectedUser, sendMessage, getMessages } =
     useContext(ChatContext);
   const { authUser, onlineUsers } = useContext(AuthContext);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const scrollEnd = useRef();
   const messagesContainerRef = useRef();
@@ -20,7 +23,8 @@ const ChatContainer = () => {
     const container = messagesContainerRef.current;
     if (!container) return false;
     return (
-      container.scrollHeight - container.scrollTop <= container.clientHeight + 100
+      container.scrollHeight - container.scrollTop <=
+      container.clientHeight + 100
     ); // within 100px of bottom
   };
 
@@ -144,7 +148,9 @@ const ChatContainer = () => {
                       ? authUser?.profilePic || assets.avatar_icon
                       : selectedUser?.profilePic || assets.avatar_icon
                   }
-                  alt={`${isSender ? authUser?.fullName : selectedUser?.fullName}'s avatar`}
+                  alt={`${
+                    isSender ? authUser?.fullName : selectedUser?.fullName
+                  }'s avatar`}
                   className="w-7 rounded-full"
                 />
                 <p className="text-gray-500">
@@ -159,6 +165,25 @@ const ChatContainer = () => {
       {/* {----------------- bottom area ---------------} */}
       <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3">
         <div className="flex-1 flex items-center bg-gray-100/12 px-3 rounded-full">
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="mr-2 text-xl"
+          >
+            😊
+          </button>
+
+          {showEmojiPicker && (
+            <div className="absolute bottom-14 left-0 z-10">
+              <Picker
+                data={data}
+                onEmojiSelect={(emoji) =>
+                  setInput((prev) => prev + emoji.native)
+                }
+                theme="dark"
+              />
+            </div>
+          )}
+
           <input
             onChange={(e) => setInput(e.target.value)}
             value={input}
