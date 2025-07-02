@@ -18,7 +18,7 @@ const GroupPage = () => {
       </div>
     );
   }
-
+  // create group
   const createGroup = async () => {
     try {
       const res = await axios.post("/api/groups/create", {
@@ -35,6 +35,7 @@ const GroupPage = () => {
     }
   };
 
+  // join group
   const joinGroup = async () => {
     try {
       const res = await axios.post("/api/groups/join", {

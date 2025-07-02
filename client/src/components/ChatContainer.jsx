@@ -16,7 +16,7 @@ const ChatContainer = () => {
     getMessages,
     getGroupMessages,
     currentGroupId,
-    sendGroupMessage, // ✅ Use this instead of socket.emit directly
+    sendGroupMessage,
   } = useContext(ChatContext);
 
   const { authUser, onlineUsers } = useContext(AuthContext);

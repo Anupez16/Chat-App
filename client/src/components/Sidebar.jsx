@@ -8,12 +8,12 @@ const Sidebar = () => {
   const {
     getUsers,
     users,
-    groups, // ✅ groups from context
+    groups,
     selectedUser,
     setSelectedUser,
     unseenMessages,
     setUnseenMessages,
-    setCurrentGroupId, // ✅ for switching to group chat
+    setCurrentGroupId,
   } = useContext(ChatContext);
 
   const { logout, onlineUsers } = useContext(AuthContext);
@@ -91,7 +91,7 @@ const Sidebar = () => {
           <div
             onClick={() => {
               setSelectedUser(user);
-              setCurrentGroupId(null); // ✅ Exit group chat if active
+              setCurrentGroupId(null); // reset current group
               setUnseenMessages((prev) => ({ ...prev, [user._id]: 0 }));
             }}
             key={index}
@@ -131,8 +131,8 @@ const Sidebar = () => {
           <div
             key={group._id}
             onClick={() => {
-              setSelectedUser(null); // ✅ exit private chat
-              setCurrentGroupId(group._id); // ✅ switch to group
+              setSelectedUser(null); // reset selected user
+              setCurrentGroupId(group._id); // set current group
             }}
             className="cursor-pointer px-3 py-2 hover:bg-[#282142]/40 rounded text-sm"
           >
