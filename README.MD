@@ -59,7 +59,7 @@ cd chat-app
 ```bash
 cd server
 npm install
-npm run dev
+npm run server
 ```
 
 ### 💻 3. Setup the client
