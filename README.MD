@@ -50,7 +50,7 @@ The application is designed to offer a fast, reliable, and secure communication 
 ### 📦 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/chat-app.git
+git clone https://github.com/Anupez16/Chat-App.git
 cd chat-app
 ```
 
